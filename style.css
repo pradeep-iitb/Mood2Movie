@@ -28,3 +28,12 @@ body {
   pointer-events: none;
 }
 
+nav {
+  position: relative;
+  z-index: 10;
+}
+
+section {
+  position: relative;
+  z-index: 5;
+}

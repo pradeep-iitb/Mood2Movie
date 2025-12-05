@@ -54,3 +54,67 @@ window.addEventListener('resize', () => {
   canvas.height = window.innerHeight;
 });
 
+// API key from env
+const API_KEY = 'cd5a5e47';
+
+// Get search elements
+const searchInput = document.getElementById('searchbar');
+const searchBtn = document.getElementById('search-btn');
+const resultsDiv = document.getElementById('results');
+
+// Function to search movies
+function searchMovies() {
+  const query = searchInput.value.trim();
+  
+  if (!query) {
+    resultsDiv.innerHTML = '<p class="text-gray-400 col-span-full text-center">Please enter a movie name</p>';
+    return;
+  }
+  
+  resultsDiv.innerHTML = '<p class="text-gray-400 col-span-full text-center">Searching...</p>';
+  
+  // Make API request
+  fetch(`http://www.omdbapi.com/?s=${query}&apikey=${API_KEY}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.Response === 'True') {
+        displayResults(data.Search.slice(0, 8));
+      } else {
+        resultsDiv.innerHTML = '<p class="text-gray-400 col-span-full text-center">No movies found</p>';
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      resultsDiv.innerHTML = '<p class="text-red-400 col-span-full text-center">Something went wrong</p>';
+    });
+}
+
+// Function to display movie cards
+function displayResults(movies) {
+  resultsDiv.innerHTML = '';
+  
+  movies.forEach(movie => {
+    const card = document.createElement('div');
+    card.className = 'bg-white/10 rounded-lg p-4 backdrop-blur-sm border border-white/20 hover:scale-105 transition duration-300';
+    
+    const poster = movie.Poster !== 'N/A' ? movie.Poster : 'assets/no-poster.png';
+    
+    card.innerHTML = `
+      <img src="${poster}" alt="${movie.Title}" class="w-full h-80 object-cover rounded-lg mb-3">
+      <h3 class="text-lg font-semibold text-purple-200 mb-1">${movie.Title}</h3>
+      <p class="text-sm text-gray-400">${movie.Year}</p>
+      <p class="text-xs text-gray-500 mt-1">${movie.Type}</p>
+    `;
+    
+    resultsDiv.appendChild(card);
+  });
+}
+
+// Event listeners for search
+searchBtn.addEventListener('click', searchMovies);
+
+searchInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    searchMovies();
+  }
+});
