@@ -368,8 +368,7 @@ function renderOptimizerList(movies, availableMinutes = null) {
     item.addEventListener('dragend', handleDragEnd);
     item.addEventListener('dragover', handleDragOver);
     item.addEventListener('drop', handleDrop);
-    
-    // Remove button with balloon animation
+ 
     const removeBtn = item.querySelector('.remove-optimizer-btn');
     removeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -571,7 +570,7 @@ async function displayRecommended(movies) {
         
         card.innerHTML = `
           <div class="text-gray-50 z-20">
-            <h3 class="font-bold text-2xl mb-1 line-clamp-2">${data.Title}</h3>
+            <h3 class="font-[text] font-bold text-2xl mb-1 line-clamp-2">${data.Title}</h3>
             <p class="text-xs text-purple-200">${year} • ${runtime}</p>
             <p class="text-xs text-purple-300 mt-1 line-clamp-1">${genre}</p>
           </div>

@@ -8,7 +8,8 @@ This project was developed using a mix of manual coding, modern developer tools,
 
 I started by designing the overall idea and flow of the application on my own . The complete glassmorphism navigation bar and Card structure was built manually to ensure full control over structure and responsiveness.
 
-After that, I implemented:
+
+After that, I implemented: 
 - The recommendation section
 - Watchlist UI and logic
 - OMDB API integration pipeline
