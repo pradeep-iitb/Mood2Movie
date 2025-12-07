@@ -191,7 +191,6 @@ Plan your movie marathon efficiently:
 - **Smart Analysis**: Instantly see which movies fit in your timeframe
 - **Visual Warnings**: Movies that won't fit are marked with red borders and ⚠️ warnings
 - **Drag & Drop**: Reorder movies by dragging the ⋮⋮ handle
-- **Balloon Animation**: Enjoy a satisfying purple balloon pop animation when removing movies
 - **Real-time Updates**: Total runtime updates as you add/remove movies
 
 ### Interactive Animations
@@ -199,7 +198,6 @@ Plan your movie marathon efficiently:
 - **3D Card Rotation**: Recommended movies have tilted 3D effect that flattens on hover
 - **Poster Reveal**: Movie posters become visible when hovering over cards
 - **Loading Animation**: Banter-loader with moving boxes during search
-- **Balloon Pop**: Minimalistic balloon burst with particle explosion on remove
 
 ### Animated Background
 The canvas background features 50 wandering dots with:
