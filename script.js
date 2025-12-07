@@ -1,46 +1,38 @@
-// Canvas setup
+// Background animation setup
 const canvas = document.getElementById('bg-canvas');
-const ctx = canvas.getContext('2d');
-
-// Resize canvas to full screen
+const Context = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// Dots array
+// Dots array and defining their positions and velocities
 const dots = [];
-const dotCount = 30;
-
-// Create dots with random positions and velocities
+const dotCount = 50;
 for (let i = 0; i < dotCount; i++) {
   dots.push({
     x: Math.random() * canvas.width,
     y: Math.random() * canvas.height,
     vx: (Math.random() - 0.5) * 0.5,
     vy: (Math.random() - 0.5) * 0.5,
-    radius: Math.random() * 2 + 1
+    radius: Math.random() * 2 +1
   });
 }
 
 // Animation loop
 function animate() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-  // Update and draw each dot
+  Context.clearRect(0, 0, canvas.width, canvas.height);
   dots.forEach(dot => {
-    dot.x += dot.vx;
-    dot.y += dot.vy;
+    dot.x = dot.x + dot.vx;
+    dot.y = dot.y + dot.vy;
     
-    // Wrap around screen edges
     if (dot.x < 0) dot.x = canvas.width;
     if (dot.x > canvas.width) dot.x = 0;
     if (dot.y < 0) dot.y = canvas.height;
     if (dot.y > canvas.height) dot.y = 0;
     
-    // Draw dot
-    ctx.fillStyle = 'rgba(133, 150, 247, 0.4)';
-    ctx.beginPath();
-    ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
-    ctx.fill();
+    Context.fillStyle = 'rgba(133, 150, 247, 0.4)';
+    Context.beginPath();
+    Context.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2);
+    Context.fill();
   });
   
   requestAnimationFrame(animate);
@@ -54,9 +46,9 @@ window.addEventListener('resize', () => {
   canvas.height = window.innerHeight;
 });
 
-// API keys
-const OMDB_API_KEY = 'cd5a5e47';
-const GEMINI_API_KEY = 'AIzaSyBxyUK8hidL31Nm5mcx6vjqTQfT6Kuj4Tg';
+// API keys imported from config.js
+const OMDB_API_KEY = CONFIG.OMDB_API_KEY;
+const GEMINI_API_KEY = CONFIG.GEMINI_API_KEY;
 
 // Get elements
 const searchInput = document.getElementById('searchbar');
@@ -72,7 +64,7 @@ let searchHistory = [];
 // Function to get movie suggestions from Gemini AI
 async function getMovieSuggestionsFromAI(query) {
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -89,6 +81,12 @@ async function getMovieSuggestionsFromAI(query) {
     const data = await response.json();
     console.log('Gemini response:', data);
     
+    // Check for API errors
+    if (data.error) {
+      console.error('Gemini API error:', data.error);
+      throw new Error(`API Error: ${data.error.message || 'Unknown error'}`);
+    }
+    
     if (data.candidates && data.candidates[0] && data.candidates[0].content) {
       let suggestions = data.candidates[0].content.parts[0].text.trim();
       
@@ -98,47 +96,17 @@ async function getMovieSuggestionsFromAI(query) {
       const movieList = suggestions.split(',').map(s => s.trim()).filter(s => s.length > 0);
       
       if (movieList.length > 0) {
+        console.log('AI suggested movies:', movieList);
         return movieList;
       }
     }
     
-    // Fallback: extract keywords and search
-    console.log('AI returned empty, using keyword extraction');
-    return extractKeywordsForSearch(query);
+    throw new Error('AI did not return valid movie suggestions');
     
   } catch (error) {
     console.error('Gemini AI error:', error);
-    return extractKeywordsForSearch(query);
+    throw error;
   }
-}
-
-// Fallback function to extract search keywords
-function extractKeywordsForSearch(query) {
-  const lowerQuery = query.toLowerCase();
-  
-  // Emotional state to movie genre mapping
-  const emotionMap = {
-    'breakup': ['eternal sunshine', '500 days of summer', 'blue valentine', 'her'],
-    'sad': ['schindler', 'grave of fireflies', 'manchester by the sea'],
-    'heartbreak': ['eternal sunshine', 'blue valentine', 'la la land'],
-    'lonely': ['her', 'lost in translation', 'moon'],
-    'happy': ['paddington', 'chef', 'sound of music'],
-    'excited': ['mad max', 'john wick', 'avengers'],
-    'scared': ['conjuring', 'hereditary', 'quiet place'],
-    'romantic': ['notebook', 'pride and prejudice', 'la la land'],
-    'inspired': ['pursuit of happyness', 'shawshank', 'rocky'],
-    'nostalgic': ['back to future', 'goonies', 'stand by me']
-  };
-  
-  // Check for emotion keywords
-  for (let emotion in emotionMap) {
-    if (lowerQuery.includes(emotion)) {
-      return emotionMap[emotion];
-    }
-  }
-  
-  // Default search with the query itself
-  return [query, 'drama', 'romance'];
 }
 
 // Main search function
@@ -150,54 +118,123 @@ async function searchMovies() {
     return;
   }
   
-  resultsDiv.innerHTML = '<p class="text-gray-400 col-span-full text-center">Thinking...</p>';
-  
-  // Get AI suggestions
-  const movieTitles = await getMovieSuggestionsFromAI(query);
-  searchHistory.push(...movieTitles);
-  
-  resultsDiv.innerHTML = '<p class="text-gray-400 col-span-full text-center">Searching movies...</p>';
-  
-  // Search each movie in OMDB
-  const allMovies = [];
-  for (let title of movieTitles) {
-    try {
-      const response = await fetch(`http://www.omdbapi.com/?s=${title}&apikey=${OMDB_API_KEY}`);
-      const data = await response.json();
-      if (data.Response === 'True') {
-        allMovies.push(...data.Search);
+  try {
+    resultsDiv.innerHTML = `
+      <div class="col-span-full flex flex-col items-center justify-center py-10">
+        <div class="banter-loader">
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+        </div>
+        <p class="text-purple-300 mt-20 text-lg">Finding perfect movies for your mood...</p>
+      </div>
+    `;
+
+    const movieTitles = await getMovieSuggestionsFromAI(query);
+    searchHistory.push(...movieTitles);
+    
+    resultsDiv.innerHTML = `
+      <div class="col-span-full flex flex-col items-center justify-center py-10">
+        <div class="banter-loader">
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+          <div class="banter-loader__box"></div>
+        </div>
+        <p class="text-purple-300 mt-20 text-lg">Fetching movie details...</p>
+      </div>
+    `;
+    
+    // Get detailed info for each movie
+    const movieDetails = [];
+    for (let title of movieTitles.slice(0, 8)) {
+      try {
+        const response = await fetch(`http://www.omdbapi.com/?t=${encodeURIComponent(title)}&apikey=${OMDB_API_KEY}`);
+        const data = await response.json();
+        if (data.Response === 'True') {
+          movieDetails.push(data);
+        }
+      } catch (error) {
+        console.error('OMDB error for', title, error);
       }
-    } catch (error) {
-      console.error('OMDB error:', error);
     }
-  }
-  
-  if (allMovies.length > 0) {
-    const uniqueMovies = Array.from(new Map(allMovies.map(m => [m.imdbID, m])).values());
-    displayResults(uniqueMovies.slice(0, 8));
-    loadRecommended();
-  } else {
-    resultsDiv.innerHTML = '<p class="text-gray-400 col-span-full text-center">No movies found</p>';
+    
+    if (movieDetails.length > 0) {
+      displayResults(movieDetails);
+      loadRecommended();
+    } else {
+      resultsDiv.innerHTML = '<p class="text-gray-400 col-span-full text-center">No movies found from AI suggestions</p>';
+    }
+  } catch (error) {
+    console.error('Search error:', error);
+    resultsDiv.innerHTML = `<p class="text-red-400 col-span-full text-center">Error: ${error.message}<br><small class="text-gray-400">Check browser console (F12) for details</small></p>`;
   }
 }
 
-// Display movie cards with wishlist button
+// Display movie cards with detailed info
 function displayResults(movies) {
   resultsDiv.innerHTML = '';
   
-  movies.forEach(movie => {
+  // Sort movies by ROI (Return On Investment - higher rating with lower runtime is better)
+  const sortedMovies = movies.sort((a, b) => {
+    const ratingA = parseFloat(a.imdbRating) || 0;
+    const ratingB = parseFloat(b.imdbRating) || 0;
+    const runtimeA = parseInt(a.Runtime) || 120;
+    const runtimeB = parseInt(b.Runtime) || 120;
+    
+    const roiA = runtimeA > 0 ? ratingA / (runtimeA / 100) : 0;
+    const roiB = runtimeB > 0 ? ratingB / (runtimeB / 100) : 0;
+    
+    return roiB - roiA;
+  });
+  
+  sortedMovies.forEach(movie => {
     const card = document.createElement('div');
     card.className = 'bg-white/10 rounded-lg p-4 backdrop-blur-sm border border-white/20 hover:scale-105 transition duration-300';
     
     const poster = movie.Poster !== 'N/A' ? movie.Poster : 'assets/no-poster.png';
+    const rating = movie.imdbRating !== 'N/A' ? movie.imdbRating : '—';
+    const genre = movie.Genre !== 'N/A' ? movie.Genre : '';
+    const runtime = movie.Runtime !== 'N/A' ? movie.Runtime : '';
+    const plot = movie.Plot !== 'N/A' ? movie.Plot : '';
+    const director = movie.Director !== 'N/A' ? movie.Director : '';
+    const actors = movie.Actors !== 'N/A' ? movie.Actors : '';
     
     card.innerHTML = `
       <img src="${poster}" alt="${movie.Title}" class="w-full h-80 object-cover rounded-lg mb-3">
-      <h3 class="text-lg font-semibold text-purple-200 mb-1">${movie.Title}</h3>
-      <p class="text-sm text-gray-400">${movie.Year}</p>
-      <p class="text-xs text-gray-500 mt-1">${movie.Type}</p>
-      <button class="mt-3 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition" onclick="addToWatchlist('${movie.imdbID}', '${movie.Title.replace(/'/g, "\\'")}'', '${poster}', '${movie.Year}')">Add to Watchlist</button>
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-lg font-semibold text-purple-200">${movie.Title}</h3>
+        <span class="flex items-center gap-1 bg-yellow-500/20 px-2 py-1 rounded text-yellow-300 text-sm font-bold">
+          ⭐ ${rating}
+        </span>
+      </div>
+      <p class="text-xs text-gray-400 mb-2">${movie.Year} • ${runtime}</p>
+      <p class="text-xs text-purple-300 mb-2">${genre}</p>
+      <p class="text-xs text-gray-400 mb-2 line-clamp-2">${plot}</p>
+      <p class="text-xs text-gray-500 mb-1"><strong>Director:</strong> ${director}</p>
+      <p class="text-xs text-gray-500 mb-3"><strong>Cast:</strong> ${actors}</p>
+      <button class="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition watchlist-btn">Add to Watchlist</button>
     `;
+    const btn = card.querySelector('.watchlist-btn');
+    btn.addEventListener('click', () => {
+      const added = addToWatchlist(movie.imdbID, movie.Title, poster, movie.Year, runtime, rating);
+      if (added) {
+        btn.textContent = 'Added to Watchlist';
+        btn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+        btn.classList.add('bg-green-600', 'hover:bg-green-700');
+      }
+    });
     
     resultsDiv.appendChild(card);
   });
@@ -208,17 +245,16 @@ function getWatchlist() {
   return JSON.parse(localStorage.getItem('watchlist') || '[]');
 }
 
-function addToWatchlist(id, title, poster, year) {
+function addToWatchlist(id, title, poster, year, runtime, rating) {
   let watchlist = getWatchlist();
   
   if (!watchlist.find(m => m.id === id)) {
-    watchlist.push({ id, title, poster, year });
+    watchlist.push({ id, title, poster, year, runtime, rating });
     localStorage.setItem('watchlist', JSON.stringify(watchlist));
     updateWatchlistUI();
-    alert('Added to watchlist!');
-  } else {
-    alert('Already in watchlist!');
+    return true;
   }
+  return false;
 }
 
 function removeFromWatchlist(id) {
@@ -236,15 +272,38 @@ function updateWatchlistUI() {
     return;
   }
   
-  watchlistItems.innerHTML = '';
+  // Calculate total runtime
+  let totalMinutes = 0;
   watchlist.forEach(movie => {
+    const runtime = parseInt(movie.runtime) || 0;
+    totalMinutes += runtime;
+  });
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  
+  watchlistItems.innerHTML = `<p class="text-purple-300 text-sm font-semibold mb-3">Total: ${hours}h ${minutes}m (${watchlist.length} movies)</p>`;
+  
+  // Sort by ROI (rating/runtime) descending
+  const sortedWatchlist = watchlist.sort((a, b) => {
+    const ratingA = parseFloat(a.rating) || 0;
+    const ratingB = parseFloat(b.rating) || 0;
+    const runtimeA = parseInt(a.runtime) || 120;
+    const runtimeB = parseInt(b.runtime) || 120;
+    const roiA = runtimeA > 0 ? ratingA / (runtimeA / 100) : 0;
+    const roiB = runtimeB > 0 ? ratingB / (runtimeB / 100) : 0;
+    return roiB - roiA;
+  });
+  
+  sortedWatchlist.forEach(movie => {
+    const rating = parseFloat(movie.rating) || 0;
+    
     const item = document.createElement('div');
     item.className = 'flex gap-2 bg-purple-800/50 p-2 rounded-lg';
     item.innerHTML = `
       <img src="${movie.poster}" class="w-12 h-16 object-cover rounded">
       <div class="flex-1">
         <p class="text-sm font-semibold text-purple-100">${movie.title}</p>
-        <p class="text-xs text-gray-400">${movie.year}</p>
+        <p class="text-xs text-gray-400">${movie.year} • ⭐${rating}</p>
       </div>
       <button onclick="removeFromWatchlist('${movie.id}')" class="text-red-400 hover:text-red-300 text-xl">×</button>
     `;
@@ -272,7 +331,7 @@ async function loadRecommended() {
       const response = await fetch(`http://www.omdbapi.com/?s=${lastSearch}&apikey=${OMDB_API_KEY}`);
       const data = await response.json();
       if (data.Response === 'True') {
-        displayRecommended(data.Search.slice(0, 8));
+        displayRecommended(data.Search.slice(0, 4));
       }
     } catch (error) {
       console.error('Error loading recommended:', error);
@@ -280,24 +339,66 @@ async function loadRecommended() {
   }
 }
 
-function displayRecommended(movies) {
+async function displayRecommended(movies) {
   recommendedDiv.innerHTML = '';
   
-  movies.forEach(movie => {
-    const card = document.createElement('div');
-    card.className = 'bg-white/10 rounded-lg p-4 backdrop-blur-sm border border-white/20 hover:scale-105 transition duration-300';
-    
-    const poster = movie.Poster !== 'N/A' ? movie.Poster : 'assets/no-poster.png';
-    
-    card.innerHTML = `
-      <img src="${poster}" alt="${movie.Title}" class="w-full h-80 object-cover rounded-lg mb-3">
-      <h3 class="text-lg font-semibold text-purple-200 mb-1">${movie.Title}</h3>
-      <p class="text-sm text-gray-400">${movie.Year}</p>
-      <button class="mt-3 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition" onclick="addToWatchlist('${movie.imdbID}', '${movie.Title.replace(/'/g, "\\'")}'', '${poster}', '${movie.Year}')">Add to Watchlist</button>
-    `;
-    
-    recommendedDiv.appendChild(card);
-  });
+  // Fetch detailed info for recommended movies
+  for (let movie of movies.slice(0, 4)) {
+    try {
+      const response = await fetch(`http://www.omdbapi.com/?i=${movie.imdbID}&apikey=${OMDB_API_KEY}`);
+      const data = await response.json();
+      
+      if (data.Response === 'True') {
+        const card = document.createElement('div');
+        card.className = 'relative scale-90 duration-500 hover:scale-100 hover:[transform:rotate3d(0,0,0,0deg)] [transform:rotate3d(1,-1,1,60deg)] group border border-purple-900 border-4 overflow-hidden rounded-2xl h-72 w-full bg-purple-800 p-4 flex flex-col justify-between';
+        
+        const poster = data.Poster !== 'N/A' ? data.Poster : 'assets/no-poster.png';
+        const rating = data.imdbRating !== 'N/A' ? data.imdbRating : '—';
+        const genre = data.Genre !== 'N/A' ? data.Genre : '';
+        const runtime = data.Runtime !== 'N/A' ? data.Runtime : '';
+        const year = data.Year !== 'N/A' ? data.Year : '';
+        
+        card.innerHTML = `
+          <div class="text-gray-50 z-20">
+            <h3 class="font-bold text-2xl mb-1 line-clamp-2">${data.Title}</h3>
+            <p class="text-xs text-purple-200">${year} • ${runtime}</p>
+            <p class="text-xs text-purple-300 mt-1 line-clamp-1">${genre}</p>
+          </div>
+          <div class="flex flex-col gap-2 z-20">
+            <span class="flex items-center gap-1 bg-yellow-500/30 px-2 py-1 rounded-lg text-yellow-300 text-sm font-bold w-fit">
+              ⭐ ${rating}
+            </span>
+            <button class="duration-300 hover:bg-purple-900 border-2 border-purple-300 hover:text-gray-50 bg-gray-50 font-semibold text-purple-800 px-3 py-2 rounded-lg flex flex-row items-center justify-center gap-2 rec-watchlist-btn text-sm">
+              Add to Watchlist
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z"/>
+              </svg>
+            </button>
+          </div>
+          <img src="${poster}" alt="${data.Title}" class="group-hover:scale-125 group-hover:opacity-90 duration-500 absolute top-0 left-0 w-full h-full object-cover opacity-15 z-0">
+          <div class="absolute inset-0 bg-gradient-to-t from-purple-900 via-purple-900/50 to-transparent group-hover:from-purple-900/80 group-hover:via-purple-900/30 duration-500 z-10"></div>
+        `;
+        const recBtn = card.querySelector('.rec-watchlist-btn');
+        recBtn.addEventListener('click', () => {
+          const added = addToWatchlist(data.imdbID, data.Title, poster, data.Year, runtime, rating);
+          if (added) {
+            recBtn.innerHTML = `
+              Added to Watchlist
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+            `;
+            recBtn.classList.remove('bg-gray-50', 'text-purple-800', 'hover:bg-purple-900');
+            recBtn.classList.add('bg-green-600', 'text-white', 'hover:bg-green-700', 'border-green-600');
+          }
+        });
+        
+        recommendedDiv.appendChild(card);
+      }
+    } catch (error) {
+      console.error('Error fetching recommended movie details:', error);
+    }
+  }
 }
 
 // Event listeners
