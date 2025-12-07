@@ -99,7 +99,6 @@ async function getMovieSuggestionsFromAI(query) {
     if (data.candidates && data.candidates[0] && data.candidates[0].content) {
       let suggestions = data.candidates[0].content.parts[0].text.trim();
       
-      // Clean up the response - remove numbers, dots, extra spaces
       suggestions = suggestions.replace(/\d+\.\s*/g, '').replace(/\n/g, ',');
       
       const movieList = suggestions.split(',').map(s => s.trim()).filter(s => s.length > 0);
@@ -178,7 +177,6 @@ async function searchMovies() {
         console.error('OMDB error for', title, error);
       }
     }
-    
     if (movieDetails.length > 0) {
       displayResults(movieDetails);
       loadRecommended();
@@ -194,24 +192,18 @@ async function searchMovies() {
 // Display movie cards with detailed info
 function displayResults(movies) {
   resultsDiv.innerHTML = '';
-  
-  // Sort movies by ROI (Return On Investment - higher rating with lower runtime is better)
   const sortedMovies = movies.sort((a, b) => {
     const ratingA = parseFloat(a.imdbRating) || 0;
     const ratingB = parseFloat(b.imdbRating) || 0;
     const runtimeA = parseInt(a.Runtime) || 120;
     const runtimeB = parseInt(b.Runtime) || 120;
-    
     const roiA = runtimeA > 0 ? ratingA / (runtimeA / 100) : 0;
     const roiB = runtimeB > 0 ? ratingB / (runtimeB / 100) : 0;
-    
     return roiB - roiA;
   });
-  
   sortedMovies.forEach(movie => {
     const card = document.createElement('div');
     card.className = 'bg-white/10 rounded-lg p-4 backdrop-blur-sm border border-white/20 hover:scale-105 transition duration-300';
-    
     const poster = movie.Poster !== 'N/A' ? movie.Poster : 'assets/no-poster.png';
     const rating = movie.imdbRating !== 'N/A' ? movie.imdbRating : '—';
     const genre = movie.Genre !== 'N/A' ? movie.Genre : '';
@@ -242,7 +234,6 @@ function displayResults(movies) {
         showMovieDetails(movie);
       }
     });
-    
     const btn = card.querySelector('.watchlist-btn');
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -252,9 +243,7 @@ function displayResults(movies) {
         btn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
         btn.classList.add('bg-green-600', 'hover:bg-green-700');
       }
-    });
-    
-    resultsDiv.appendChild(card);
+    });resultsDiv.appendChild(card);
   });
 }
 
@@ -351,6 +340,8 @@ function showMovieDetails(movie) {
     </div>
   `;
   
+
+
   const modalBtn = modalContent.querySelector('.modal-watchlist-btn');
   modalBtn.addEventListener('click', () => {
     const added = addToWatchlist(movie.imdbID, movie.Title, poster, movie.Year, runtime, rating);
@@ -374,10 +365,8 @@ function closeMovieModal() {
 function getWatchlist() {
   return JSON.parse(localStorage.getItem('watchlist') || '[]');
 }
-
 function addToWatchlist(id, title, poster, year, runtime, rating) {
   let watchlist = getWatchlist();
-  
   if (!watchlist.find(m => m.id === id)) {
     watchlist.push({ id, title, poster, year, runtime, rating });
     localStorage.setItem('watchlist', JSON.stringify(watchlist));
@@ -510,11 +499,8 @@ function handleDragStart(e) {
   draggedElement = e.currentTarget;
   e.currentTarget.style.opacity = '0.4';
 }
-
 function handleDragEnd(e) {
   e.currentTarget.style.opacity = '1';
-  
-  // Update order in localStorage
   const items = optimizerList.querySelectorAll('.optimizer-item');
   const newOrder = Array.from(items).map(item => item.dataset.id);
   
@@ -537,7 +523,6 @@ function handleDragOver(e) {
 function handleDrop(e) {
   e.preventDefault();
 }
-
 function getDragAfterElement(container, y) {
   const draggableElements = [...container.querySelectorAll('.optimizer-item:not(.dragging)')];
   
@@ -555,8 +540,6 @@ function getDragAfterElement(container, y) {
 
 function createBalloonAnimation(element) {
   const rect = element.getBoundingClientRect();
-  
-  // Create gentle smoke/dust puffs
   for (let i = 0; i < 5; i++) {
     const puff = document.createElement('div');
     const angle = (Math.PI * 2 * i) / 5;
@@ -581,8 +564,6 @@ function createBalloonAnimation(element) {
     document.body.appendChild(puff);
     setTimeout(() => puff.remove(), 600);
   }
-  
-  // Small fade particles (like dust)
   for (let i = 0; i < 8; i++) {
     const particle = document.createElement('div');
     const angle = Math.random() * Math.PI * 2;
@@ -609,7 +590,6 @@ function createBalloonAnimation(element) {
   element.style.animation = 'poofOut 0.4s ease-out forwards';
 }
 
-// Optimize button handler
 optimizeBtn.addEventListener('click', () => {
   const hours = parseFloat(availableTimeInput.value);
   if (!hours || hours <= 0) {
@@ -648,7 +628,7 @@ optimizeBtn.addEventListener('click', () => {
 // Load recommended movies
 async function loadRecommended() {
   if (searchHistory.length === 0) {
-    // Load trending if no search history
+    // Load trending if no search history like the Avengers
     try {
       const response = await fetch(`http://www.omdbapi.com/?s=avengers&apikey=${OMDB_API_KEY}`);
       const data = await response.json();
@@ -675,8 +655,6 @@ async function loadRecommended() {
 
 async function displayRecommended(movies) {
   recommendedDiv.innerHTML = '';
-  
-  // Fetch detailed info for recommended movies
   for (let movie of movies.slice(0, 4)) {
     try {
       const response = await fetch(`http://www.omdbapi.com/?i=${movie.imdbID}&apikey=${OMDB_API_KEY}`);
@@ -734,8 +712,6 @@ async function displayRecommended(movies) {
     }
   }
 }
-
-// Event listeners
 searchBtn.addEventListener('click', searchMovies);
 
 searchInput.addEventListener('keypress', (e) => {
@@ -765,7 +741,6 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Close dropdown when clicking outside
 document.addEventListener('click', (e) => {
   if (!watchlistBtn.contains(e.target) && !watchlistDropdown.contains(e.target)) {
     watchlistDropdown.classList.add('hidden');
