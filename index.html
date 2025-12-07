@@ -39,6 +39,20 @@
   <div id="results" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"></div>
 </section>
 
+<section id="watchlist-optimizer" class="max-w-7xl mx-auto mt-5 md:mt-10 px-3 md:px-6 bg-white/5 transparent rounded-2xl md:rounded-3xl backdrop-blur-lg p-4 md:p-6 border border-white/20 hidden">
+  <h2 class="text-xl md:text-2xl mx-auto text-purple-300 mb-4">🎯 Watchlist Optimizer</h2>
+  <div class="mb-6">
+    <label class="text-purple-200 text-sm mb-2 block">How many hours do you have?</label>
+    <div class="flex gap-3 items-center">
+      <input type="number" id="available-time" min="0" step="0.5" placeholder="e.g., 3.5" class="bg-purple-900/50 text-white px-4 py-2 rounded-lg outline-none border border-purple-500/30 focus:border-purple-400 w-32">
+      <span class="text-purple-300">hours</span>
+      <button id="optimize-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition font-semibold">Optimize</button>
+    </div>
+    <p id="time-info" class="text-sm text-gray-400 mt-2"></p>
+  </div>
+  <div id="optimizer-list" class="space-y-3"></div>
+</section>
+
 <section id="recommended" class="max-w-7xl mx-auto mt-5 md:mt-10 mb-10 px-3 md:px-6 bg-white/5 transparent rounded-2xl md:rounded-3xl backdrop-blur-lg p-4 md:p-6 border border-white/20">
   <h2 class="text-xl md:text-2xl mx-auto text-purple-300 mb-4 md:mb-6">Recommended For You</h2>
   <div id="recommended-results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"></div>
