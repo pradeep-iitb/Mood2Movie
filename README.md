@@ -6,7 +6,7 @@
 
 This project was developed using a mix of manual coding, modern developer tools, and UI libraries to ensure both productivity and code quality.
 
-I started by designing the overall idea and flow of the application on my own — including the movie search system, watchlist management, and recommendation layout. The complete glassmorphism navigation bar and Card structure was built manually to ensure full control over structure and responsiveness.
+I started by designing the overall idea and flow of the application on my own . The complete glassmorphism navigation bar and Card structure was built manually to ensure full control over structure and responsiveness.
 
 After that, I implemented:
 - The recommendation section
