@@ -63,6 +63,9 @@ const optimizerList = document.getElementById('optimizer-list');
 const availableTimeInput = document.getElementById('available-time');
 const optimizeBtn = document.getElementById('optimize-btn');
 const timeInfo = document.getElementById('time-info');
+const movieModal = document.getElementById('movie-modal');
+const modalContent = document.getElementById('modal-content');
+const closeModal = document.getElementById('close-modal');
 
 let searchHistory = [];
 let draggedElement = null;
@@ -218,9 +221,9 @@ function displayResults(movies) {
     const actors = movie.Actors !== 'N/A' ? movie.Actors : '';
     
     card.innerHTML = `
-      <img src="${poster}" alt="${movie.Title}" class="w-full h-80 object-cover rounded-lg mb-3">
+      <img src="${poster}" alt="${movie.Title}" class="w-full h-80 object-cover rounded-lg mb-3 cursor-pointer hover:opacity-80 transition">
       <div class="flex items-center justify-between mb-2">
-        <h3 class="text-lg font-semibold text-purple-200">${movie.Title}</h3>
+        <h3 class="text-lg font-semibold text-purple-200 cursor-pointer hover:text-purple-400 transition">${movie.Title}</h3>
         <span class="flex items-center gap-1 bg-yellow-500/20 px-2 py-1 rounded text-yellow-300 text-sm font-bold">
           ⭐ ${rating}
         </span>
@@ -232,8 +235,17 @@ function displayResults(movies) {
       <p class="text-xs text-gray-500 mb-3"><strong>Cast:</strong> ${actors}</p>
       <button class="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition watchlist-btn">Add to Watchlist</button>
     `;
+    
+    // Add click to open modal
+    card.addEventListener('click', (e) => {
+      if (!e.target.classList.contains('watchlist-btn')) {
+        showMovieDetails(movie);
+      }
+    });
+    
     const btn = card.querySelector('.watchlist-btn');
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const added = addToWatchlist(movie.imdbID, movie.Title, poster, movie.Year, runtime, rating);
       if (added) {
         btn.textContent = 'Added to Watchlist';
@@ -244,6 +256,118 @@ function displayResults(movies) {
     
     resultsDiv.appendChild(card);
   });
+}
+
+// Movie Details Modal
+function showMovieDetails(movie) {
+  const poster = movie.Poster !== 'N/A' ? movie.Poster : 'assets/no-poster.png';
+  const rating = movie.imdbRating !== 'N/A' ? movie.imdbRating : '—';
+  const genre = movie.Genre !== 'N/A' ? movie.Genre : '';
+  const runtime = movie.Runtime !== 'N/A' ? movie.Runtime : '';
+  const plot = movie.Plot !== 'N/A' ? movie.Plot : 'No plot available';
+  const director = movie.Director !== 'N/A' ? movie.Director : 'Unknown';
+  const actors = movie.Actors !== 'N/A' ? movie.Actors : 'Unknown';
+  const writer = movie.Writer !== 'N/A' ? movie.Writer : 'Unknown';
+  const awards = movie.Awards !== 'N/A' ? movie.Awards : 'None';
+  const language = movie.Language !== 'N/A' ? movie.Language : 'Unknown';
+  const country = movie.Country !== 'N/A' ? movie.Country : 'Unknown';
+  const boxOffice = movie.BoxOffice !== 'N/A' ? movie.BoxOffice : 'N/A';
+  const metascore = movie.Metascore !== 'N/A' ? movie.Metascore : '—';
+  
+  modalContent.innerHTML = `
+    <div class="flex flex-col md:flex-row gap-6">
+      <div class="md:w-1/3">
+        <img src="${poster}" alt="${movie.Title}" class="w-full rounded-xl shadow-2xl border-2 border-purple-500/30">
+      </div>
+      <div class="md:w-2/3 space-y-4">
+        <div>
+          <h2 class="font-[heading] text-3xl md:text-4xl font-bold text-purple-300 mb-2">${movie.Title}</h2>
+          <p class="text-gray-400 text-sm">${movie.Year} • ${runtime} • ${movie.Rated || 'Not Rated'}</p>
+        </div>
+        
+        <div class="flex gap-4 items-center flex-wrap">
+          <div class="bg-yellow-500/20 px-4 py-2 rounded-lg">
+            <p class="text-yellow-300 font-bold text-lg">⭐ ${rating}</p>
+            <p class="text-xs text-gray-400">IMDb Rating</p>
+          </div>
+          <div class="bg-purple-500/20 px-4 py-2 rounded-lg">
+            <p class="text-purple-300 font-bold text-lg">${metascore}</p>
+            <p class="text-xs text-gray-400">Metascore</p>
+          </div>
+        </div>
+        
+        <div>
+          <p class="text-purple-400 text-sm font-semibold mb-1">Genre</p>
+          <p class="text-gray-300">${genre}</p>
+        </div>
+        
+        <div>
+          <p class="text-purple-400 text-sm font-semibold mb-1">Plot</p>
+          <p class="text-gray-300 leading-relaxed">${plot}</p>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <p class="text-purple-400 text-sm font-semibold mb-1">Director</p>
+            <p class="text-gray-300">${director}</p>
+          </div>
+          <div>
+            <p class="text-purple-400 text-sm font-semibold mb-1">Writer</p>
+            <p class="text-gray-300">${writer}</p>
+          </div>
+        </div>
+        
+        <div>
+          <p class="text-purple-400 text-sm font-semibold mb-1">Cast</p>
+          <p class="text-gray-300">${actors}</p>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <p class="text-purple-400 text-sm font-semibold mb-1">Language</p>
+            <p class="text-gray-300">${language}</p>
+          </div>
+          <div>
+            <p class="text-purple-400 text-sm font-semibold mb-1">Country</p>
+            <p class="text-gray-300">${country}</p>
+          </div>
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <p class="text-purple-400 text-sm font-semibold mb-1">Awards</p>
+            <p class="text-gray-300">${awards}</p>
+          </div>
+          <div>
+            <p class="text-purple-400 text-sm font-semibold mb-1">Box Office</p>
+            <p class="text-gray-300">${boxOffice}</p>
+          </div>
+        </div>
+        
+        <button class="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg transition font-semibold text-lg modal-watchlist-btn">
+          Add to Watchlist
+        </button>
+      </div>
+    </div>
+  `;
+  
+  const modalBtn = modalContent.querySelector('.modal-watchlist-btn');
+  modalBtn.addEventListener('click', () => {
+    const added = addToWatchlist(movie.imdbID, movie.Title, poster, movie.Year, runtime, rating);
+    if (added) {
+      modalBtn.textContent = 'Added to Watchlist ✓';
+      modalBtn.classList.remove('bg-purple-600', 'hover:bg-purple-700');
+      modalBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+    }
+  });
+  
+  movieModal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMovieModal() {
+  movieModal.classList.add('hidden');
+  document.body.style.overflow = 'auto';
 }
 
 // Watchlist functions
@@ -624,6 +748,21 @@ searchInput.addEventListener('keypress', (e) => {
 watchlistBtn.addEventListener('click', (e) => {
   e.preventDefault();
   watchlistDropdown.classList.toggle('hidden');
+});
+
+// Modal close handlers
+closeModal.addEventListener('click', closeMovieModal);
+
+movieModal.addEventListener('click', (e) => {
+  if (e.target === movieModal) {
+    closeMovieModal();
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !movieModal.classList.contains('hidden')) {
+    closeMovieModal();
+  }
 });
 
 // Close dropdown when clicking outside
